@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\SpellCheckRequest;
 use App\Http\Requests\GetTokenRequest;
 use App\Http\Requests\GetDifferencesRequest;
-
+use App\Models\User;
 
 class ApiController extends Controller
 {    
@@ -18,7 +18,7 @@ class ApiController extends Controller
      * @param  mixed $request
      * @return void
      */
-    public function getToken(GetTokenRequest $request)
+    public function getToken(Request $request)
     {   
         $fields = [
             'PHP_AUTH_USER' => 'required',
@@ -40,22 +40,42 @@ class ApiController extends Controller
             return $this->response;
         } 
 
-        //PHP_AUTH_PW
+        //Get auth details
         $auth_user = $request->server->get('PHP_AUTH_USER');
         $auth_password = $request->server->get('PHP_AUTH_PW');
         
         //do authentication
-        
-        $this->response['status'] = true;
-        $this->response['code'] = 400;
-        $this->response['token'] = "238749234823";
+        auth()->attempt(array(
+            'email' => $auth_user, 
+            'password' => $auth_password 
+        ));
+
+        if(auth()->check())
+        {
+            $user = User::where(['email' => $auth_user])->first();
+           
+            //Delete any previous token
+            $user->tokens()->delete();
+            $token = $user->createToken('User-' . $user->id);
+
+            $this->response['status'] = true;
+            $this->response['code'] = 200;
+            $this->response['token'] = $token->plainTextToken;
+
+        } else {
+
+            $this->response['status'] = false;
+            $this->response['code'] = 203;
+            $this->response['errors'] = "Unable to login";
+        }
 
 
         return $this->response;
     }
 
-    public function spellCheck(SpellCheckRequest $request)
+    public function spellCheck(Request $request)
     {   
+
         $xmlString = $request->getContent();
 
         $xmlObject = simplexml_load_string($xmlString);
@@ -110,7 +130,7 @@ class ApiController extends Controller
         return $this->response;
     }
 
-    public function getDifferences(GetDifferencesRequest $request)
+    public function getDifferences(Request $request)
     {
         dd($request);
     }

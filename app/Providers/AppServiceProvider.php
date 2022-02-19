@@ -2,10 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\Cases;
-use App\Models\Company;
-use App\Observers\CaseObserver;
-use App\Observers\CompanyObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +23,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        
+        //
     }
 }
